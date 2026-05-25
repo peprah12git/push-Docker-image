@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ECR Repository for peprah12git quote-api with security best practices
+
+Parameters:
+  RepositoryName:
+    Type: String
+    Default: peprah-docker-image-push
+    Description: Name of the ECR repository
+
+  ProjectName:
+    Type: String
+    Default: quote-api
+    Description: Name of the project
+
+  OwnerName:
+    Type: String
+    Default: peprah12git
+    Description: GitHub username of the owner
+
+Resources:
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref RepositoryName
+      ImageTagImmutability: IMMUTABLE
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Remove untagged images after 7 days",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              },
+              {
+                "rulePriority": 2,
+                "description": "Keep only last 5 tagged images",
+                "selection": {
+                  "tagStatus": "tagged",
+                  "tagPrefixList": ["peprah12git"],
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 5
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      RepositoryPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowPushFromGitHubActions
+            Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::904233109505:role/github-actions-ecr-push-role
+            Action:
+              - ecr:BatchCheckLayerAvailability
+              - ecr:InitiateLayerUpload
+              - ecr:UploadLayerPart
+              - ecr:CompleteLayerUpload
+              - ecr:PutImage
+          - Sid: DenyUnencryptedConnections
+            Effect: Deny
+            Principal: '*'
+            Action: 'ecr:*'
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Owner
+          Value: !Ref OwnerName
+        - Key: Environment
+          Value: production
+        - Key: ManagedBy
+          Value: CloudFormation
+
+Outputs:
+  RepositoryURI:
+    Description: ECR Repository URI
+    Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${RepositoryName}
+    Export:
+      Name: !Sub ${AWS::StackName}-RepositoryURI
+
+  RepositoryARN:
+    Description: ECR Repository ARN
+    Value: !GetAtt ECRRepository.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-RepositoryARN
