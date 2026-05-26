@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: ECR Repository for peprah12git quote-api with security best practices
+Description: ECR Repository for Push Docker Image to ECR with security best practices
 
 Parameters:
   RepositoryName:
@@ -9,7 +9,7 @@ Parameters:
 
   ProjectName:
     Type: String
-    Default: quote-api
+    Default: Push Docker Image to ECR
     Description: Name of the project
 
   OwnerName:
@@ -49,7 +49,7 @@ Resources:
                 "description": "Keep only last 5 tagged images",
                 "selection": {
                   "tagStatus": "tagged",
-                  "tagPrefixList": ["peprah12git"],
+                  "tagPrefixList": ["EmmanuelPeprahMensah"],
                   "countType": "imageCountMoreThan",
                   "countNumber": 5
                 },
@@ -59,26 +59,37 @@ Resources:
               }
             ]
           }
-      RepositoryPolicy:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: AllowPushFromGitHubActions
-            Effect: Allow
-            Principal:
-              AWS: arn:aws:iam::904233109505:role/github-actions-ecr-push-role
-            Action:
-              - ecr:BatchCheckLayerAvailability
-              - ecr:InitiateLayerUpload
-              - ecr:UploadLayerPart
-              - ecr:CompleteLayerUpload
-              - ecr:PutImage
-          - Sid: DenyUnencryptedConnections
-            Effect: Deny
-            Principal: '*'
-            Action: 'ecr:*'
-            Condition:
-              Bool:
-                aws:SecureTransport: false
+      RepositoryPolicy: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AllowPushFromGitHubActions",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "arn:aws:iam::904233109505:role/github-actions-ecr-push-role"
+              },
+              "Action": [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:InitiateLayerUpload",
+                "ecr:UploadLayerPart",
+                "ecr:CompleteLayerUpload",
+                "ecr:PutImage"
+              ]
+            },
+            {
+              "Sid": "DenyUnencryptedConnections",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "ecr:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false"
+                }
+              }
+            }
+          ]
+        }
       Tags:
         - Key: Project
           Value: !Ref ProjectName
