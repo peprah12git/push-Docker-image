@@ -59,7 +59,22 @@ Resources:
               }
             ]
           }
-      RepositoryPolicy: !Sub |
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Owner
+          Value: !Ref OwnerName
+        - Key: Environment
+          Value: production
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  ECRRepositoryPolicy:
+    Type: AWS::ECR::RepositoryPolicy
+    DependsOn: ECRRepository
+    Properties:
+      RepositoryName: !Ref RepositoryName
+      PolicyText: !Sub |
         {
           "Version": "2012-10-17",
           "Statement": [
@@ -90,15 +105,6 @@ Resources:
             }
           ]
         }
-      Tags:
-        - Key: Project
-          Value: !Ref ProjectName
-        - Key: Owner
-          Value: !Ref OwnerName
-        - Key: Environment
-          Value: production
-        - Key: ManagedBy
-          Value: CloudFormation
 
 Outputs:
   RepositoryURI:
