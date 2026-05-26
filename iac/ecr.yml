@@ -69,43 +69,6 @@ Resources:
         - Key: ManagedBy
           Value: CloudFormation
 
-  ECRRepositoryPolicy:
-    Type: AWS::ECR::RepositoryPolicy
-    DependsOn: ECRRepository
-    Properties:
-      RepositoryName: !Ref RepositoryName
-      PolicyText: !Sub |
-        {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Sid": "AllowPushFromGitHubActions",
-              "Effect": "Allow",
-              "Principal": {
-                "AWS": "arn:aws:iam::904233109505:role/github-actions-ecr-push-role"
-              },
-              "Action": [
-                "ecr:BatchCheckLayerAvailability",
-                "ecr:InitiateLayerUpload",
-                "ecr:UploadLayerPart",
-                "ecr:CompleteLayerUpload",
-                "ecr:PutImage"
-              ]
-            },
-            {
-              "Sid": "DenyUnencryptedConnections",
-              "Effect": "Deny",
-              "Principal": "*",
-              "Action": "ecr:*",
-              "Condition": {
-                "Bool": {
-                  "aws:SecureTransport": "false"
-                }
-              }
-            }
-          ]
-        }
-
 Outputs:
   RepositoryURI:
     Description: ECR Repository URI
