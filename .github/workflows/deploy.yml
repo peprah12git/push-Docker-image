@@ -12,6 +12,7 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    needs: []
 
     steps:
       - name: Checkout code
@@ -31,7 +32,7 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: peprah-docker-image-push
-          IMAGE_TAG: peprah12git_quote-api
+          IMAGE_TAG: EmmanuelPeprahMensah_quote-api
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
