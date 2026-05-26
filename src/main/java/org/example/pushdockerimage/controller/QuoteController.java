@@ -16,7 +16,7 @@ public class QuoteController {
         this.quoteRepository = quoteRepository;
     }
 
-    @GetMapping("/random")
+    @GetMapping("/ranndom")
     public Quote getRandomQuote() {
         return quoteRepository.findRandom();
     }
