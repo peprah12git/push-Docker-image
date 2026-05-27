@@ -35,4 +35,5 @@ jobs:
           parameter-overrides: >-
             RepositoryName=peprah-docker-image-push,
             ProjectName=Push Docker Image to ECR,
-            OwnerName=peprah12git
+            OwnerName=EmmanuelPeprahMensah,
+            MaxImageCount=5

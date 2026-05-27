@@ -3,6 +3,21 @@ Description: >
   Private Amazon ECR repository for Push Docker Image to ECR project.
 
 Parameters:
+  RepositoryName:
+    Type: String
+    Default: peprah-docker-image-push
+    Description: Name of the ECR repository
+
+  ProjectName:
+    Type: String
+    Default: Push Docker Image to ECR
+    Description: Name of the project
+
+  OwnerName:
+    Type: String
+    Default: EmmanuelPeprahMensah
+    Description: Owner of the project
+
   MaxImageCount:
     Type: Number
     Default: 5
@@ -16,7 +31,7 @@ Resources:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
-      RepositoryName: peprah-docker-image-push
+      RepositoryName: !Ref RepositoryName
       ImageScanningConfiguration:
         ScanOnPush: true
       EncryptionConfiguration:
@@ -78,9 +93,9 @@ Resources:
           }
       Tags:
         - Key: Project
-          Value: Push Docker Image to ECR
+          Value: !Ref ProjectName
         - Key: Owner
-          Value: EmmanuelPeprahMensah
+          Value: !Ref OwnerName
         - Key: Environment
           Value: production
         - Key: ManagedBy
