@@ -1,83 +1,114 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: ECR Repository for Push Docker Image to ECR with security best practices
+Description: >
+  Private Amazon ECR repository for Push Docker Image to ECR project.
 
 Parameters:
-  RepositoryName:
-    Type: String
-    Default: peprah-docker-image-push
-    Description: Name of the ECR repository
-
-  ProjectName:
-    Type: String
-    Default: Push Docker Image to ECR
-    Description: Name of the project
-
-  OwnerName:
-    Type: String
-    Default: peprah12git
-    Description: GitHub username of the owner
+  MaxImageCount:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    MaxValue: 100
+    Description: Maximum number of images to retain
 
 Resources:
   ECRRepository:
     Type: AWS::ECR::Repository
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
-      RepositoryName: !Ref RepositoryName
-      ImageTagImmutability: IMMUTABLE
+      RepositoryName: peprah-docker-image-push
       ImageScanningConfiguration:
         ScanOnPush: true
       EncryptionConfiguration:
         EncryptionType: AES256
+      ImageTagMutability: IMMUTABLE
+      EmptyOnDelete: false
+      RepositoryPolicyText:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyUnencryptedTransport
+            Effect: Deny
+            Principal: '*'
+            Action: 'ecr:*'
+            Condition:
+              Bool:
+                'aws:SecureTransport': 'false'
+          - Sid: AllowPushFromGitHubActions
+            Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::904233109505:role/github-actions-ecr-push-role
+            Action:
+              - ecr:BatchCheckLayerAvailability
+              - ecr:InitiateLayerUpload
+              - ecr:UploadLayerPart
+              - ecr:CompleteLayerUpload
+              - ecr:PutImage
+              - ecr:GetDownloadUrlForLayer
+              - ecr:BatchGetImage
+              - ecr:DescribeRepositories
+              - ecr:GetRepositoryPolicy
+              - ecr:ListImages
       LifecyclePolicy:
-        LifecyclePolicyText: |
+        LifecyclePolicyText: !Sub |
           {
             "rules": [
               {
                 "rulePriority": 1,
-                "description": "Remove untagged images after 7 days",
+                "description": "Expire untagged images after 7 days",
                 "selection": {
                   "tagStatus": "untagged",
                   "countType": "sinceImagePushed",
                   "countUnit": "days",
                   "countNumber": 7
                 },
-                "action": {
-                  "type": "expire"
-                }
+                "action": { "type": "expire" }
               },
               {
                 "rulePriority": 2,
-                "description": "Keep only last 5 tagged images",
+                "description": "Keep only the ${MaxImageCount} most recent tagged images",
                 "selection": {
                   "tagStatus": "tagged",
-                  "tagPrefixList": ["EmmanuelPeprahMensah"],
+                  "tagPatternList": ["*"],
                   "countType": "imageCountMoreThan",
-                  "countNumber": 5
+                  "countNumber": ${MaxImageCount}
                 },
-                "action": {
-                  "type": "expire"
-                }
+                "action": { "type": "expire" }
               }
             ]
           }
       Tags:
         - Key: Project
-          Value: !Ref ProjectName
+          Value: Push Docker Image to ECR
         - Key: Owner
-          Value: !Ref OwnerName
+          Value: EmmanuelPeprahMensah
         - Key: Environment
           Value: production
         - Key: ManagedBy
           Value: CloudFormation
+        - Key: ImageScanning
+          Value: enabled
 
 Outputs:
-  RepositoryURI:
-    Description: ECR Repository URI
-    Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${RepositoryName}
+  RepositoryUri:
+    Description: Full URI of the ECR repository
+    Value: !GetAtt ECRRepository.RepositoryUri
     Export:
-      Name: !Sub ${AWS::StackName}-RepositoryURI
+      Name: !Sub '${AWS::StackName}-RepositoryUri'
 
-  RepositoryARN:
-    Description: ECR Repository ARN
+  RepositoryArn:
+    Description: ARN of the ECR repository
     Value: !GetAtt ECRRepository.Arn
     Export:
-      Name: !Sub ${AWS::StackName}-RepositoryARN
+      Name: !Sub '${AWS::StackName}-RepositoryArn'
+
+  RepositoryName:
+    Description: Name of the ECR repository
+    Value: !Ref ECRRepository
+    Export:
+      Name: !Sub '${AWS::StackName}-RepositoryName'
+
+  RegistryId:
+    Description: AWS account ID
+    Value: !Ref AWS::AccountId
+    Export:
+      Name: !Sub '${AWS::StackName}-RegistryId'
